@@ -12,7 +12,7 @@ export async function GET() {
   const rounds = await prisma.round.findMany({
     where: { userId: session.user.id },
     include: { holeScores: { orderBy: { hole: "asc" } } },
-    orderBy: { startDate: "desc" },
+    orderBy: { playedAt: "desc" },
   });
 
   return NextResponse.json(rounds);

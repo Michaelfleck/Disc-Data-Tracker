@@ -8,7 +8,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── NextAuth models ──────────────────────────────────────────────────────────
+// ─── NextAuth ──────────────────────────────────────────────────────────────────
 
 model Account {
   id                String  @id @default(cuid())
@@ -36,19 +36,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  rounds        Round[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -57,35 +44,107 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ─── App models ───────────────────────────────────────────────────────────────
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  handle        String?   @unique
+  homeCity      String?
+  level         Int       @default(1)
+  xp            Int       @default(0)
+  title         String?
+  accounts      Account[]
+  sessions      Session[]
+  rounds        Round[]
+  rivalries     Rivalry[]
+  createdAt     DateTime  @default(now())
+}
+
+// ─── Courses & Layouts ────────────────────────────────────────────────────────
+
+model Course {
+  id      String   @id @default(cuid())
+  name    String
+  city    String?
+  lat     Float?
+  lng     Float?
+  layouts Layout[]
+  rounds  Round[]
+
+  @@unique([name, city])
+}
+
+model Layout {
+  id       String  @id @default(cuid())
+  name     String
+  holes    Int     @default(18)
+  par      Int?
+  course   Course  @relation(fields: [courseId], references: [id])
+  courseId String
+  rounds   Round[]
+
+  @@unique([courseId, name])
+}
+
+// ─── Rounds ───────────────────────────────────────────────────────────────────
 
 model Round {
   id          String      @id @default(cuid())
   userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  layoutId    String
   playerName  String
-  courseName  String
-  layoutName  String
-  startDate   DateTime
-  endDate     DateTime?
+  playedAt    DateTime
+  endedAt     DateTime?
   total       Int
-  plusMinus   Int
-  roundRating Int?
+  toPar       Int
+  rating      Int?
+  timeOfDay   TimeSlot    @default(AFTERNOON)
+  isPB        Boolean     @default(false)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course      @relation(fields: [courseId], references: [id])
+  layout      Layout      @relation(fields: [layoutId], references: [id])
   holeScores  HoleScore[]
   createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
 
-  @@index([userId])
-  @@index([courseName])
-  @@index([startDate])
+  @@index([userId, playedAt])
+  @@index([courseId])
 }
+
+// ─── Hole Scores ──────────────────────────────────────────────────────────────
 
 model HoleScore {
   id      String @id @default(cuid())
   roundId String
-  round   Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
   hole    Int
-  score   Int?
+  strokes Int
+  par     Int?
+  round   Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
 
-  @@index([roundId])
+  @@unique([roundId, hole])
+}
+
+// ─── Rivalries ────────────────────────────────────────────────────────────────
+
+model Rivalry {
+  id         String    @id @default(cuid())
+  userId     String
+  rivalName  String
+  wins       Int       @default(0)
+  losses     Int       @default(0)
+  avgMargin  Float     @default(0)
+  lastPlayed DateTime?
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, rivalName])
+}
+
+enum TimeSlot {
+  MORNING
+  AFTERNOON
+  EVENING
 }

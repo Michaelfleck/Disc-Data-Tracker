@@ -1,3 +1,103 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Design tokens — the "Arcade Scoreboard" theme.
+ * Cold slate base, gold accent, forest-green / burnt-sienna data encoding.
+ * Swap these values to re-skin the whole app.
+ */
+@layer base {
+  :root {
+    --bg: #080a0e;
+    --bg-2: #0c0f15;
+    --panel: #10141c;
+    --panel-2: #141a25;
+    --panel-hi: #1a2230;
+    --line: rgba(120, 150, 200, 0.12);
+    --line-2: rgba(120, 150, 200, 0.22);
+    --text: #eaf1fa;
+    --dim: #8a97ab;
+    --mute: #586478;
+    --accent: #ffd23f;
+    --accent-2: #ffb627;
+    --accent-soft: rgba(255, 210, 63, 0.16);
+    --good: #2d6a4f;
+    --good-2: #5fc08c;
+    --good-soft: rgba(45, 106, 79, 0.22);
+    --bad: #c45c26;
+    --bad-2: #e68a52;
+    --bad-soft: rgba(196, 92, 38, 0.22);
+    --neutral: #8c8475;
+    --neutral-2: #b5ac9b;
+    --neutral-soft: rgba(140, 132, 117, 0.2);
+    --info: #4da6ff;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 18px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  html {
+    background: var(--bg);
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  .dg-headline {
+    margin: 0;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 400;
+    font-size: 38px;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .dg-stat {
+    transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1), border-color 0.18s;
+  }
+  .dg-stat:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-2);
+  }
+
+  .dg-trow:hover td {
+    background: var(--panel-2);
+  }
+
+  .dg-flicker {
+    animation: dg-flicker 2.2s ease-in-out infinite;
+  }
+}
+
+.dg-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+.dg-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.dg-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 4px;
+}
+.dg-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes dg-flicker {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.08) rotate(-2deg); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}

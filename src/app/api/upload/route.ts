@@ -18,31 +18,46 @@ export async function POST(req: NextRequest) {
   }
 
   const text = await file.text();
-  const rounds = parseCsvRounds(text);
+  const parsed = parseCsvRounds(text);
 
-  const created = await prisma.$transaction(
-    rounds.map((round) =>
-      prisma.round.create({
-        data: {
-          userId: session.user.id,
-          playerName: round.playerName,
-          courseName: round.courseName,
-          layoutName: round.layoutName,
-          startDate: round.startDate,
-          endDate: round.endDate ?? null,
-          total: round.total,
-          plusMinus: round.plusMinus,
-          roundRating: round.roundRating ?? null,
-          holeScores: {
-            create: round.holeScores.map((hs) => ({
-              hole: hs.hole,
-              score: hs.score,
-            })),
-          },
+  let importedCount = 0;
+
+  for (const round of parsed) {
+    // Upsert course (city unknown from CSV — use null so uniqueness is per name only)
+    const course = await prisma.course.upsert({
+      where: { name_city: { name: round.courseName, city: "" } },
+      create: { name: round.courseName, city: "" },
+      update: {},
+    });
+
+    // Upsert layout
+    const layout = await prisma.layout.upsert({
+      where: { courseId_name: { courseId: course.id, name: round.layoutName } },
+      create: { courseId: course.id, name: round.layoutName },
+      update: {},
+    });
+
+    await prisma.round.create({
+      data: {
+        userId: session.user.id,
+        courseId: course.id,
+        layoutId: layout.id,
+        playerName: round.playerName,
+        playedAt: round.startDate,
+        endedAt: round.endDate ?? null,
+        total: round.total,
+        toPar: round.plusMinus,
+        rating: round.roundRating ?? null,
+        holeScores: {
+          create: round.holeScores
+            .filter((hs) => hs.score !== null)
+            .map((hs) => ({ hole: hs.hole, strokes: hs.score as number })),
         },
-      })
-    )
-  );
+      },
+    });
 
-  return NextResponse.json({ count: created.length });
+    importedCount++;
+  }
+
+  return NextResponse.json({ count: importedCount });
 }
